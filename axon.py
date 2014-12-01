@@ -13,7 +13,7 @@ class Axon:
     # create the axon
     def __init__(self,
             num_sections = 1000, # number of compartments along the axon's length
-            length = 1000.,      # total length of axon (um)
+            length = 5000.,      # total length of axon (um)
             diam = 1.,           # axonal diameter (um)
             ):
 
@@ -61,9 +61,9 @@ class Axon:
     # insert a simple current at the given position
     def insert_stim(self, x=0.):
         stim = h.IClamp(Axon.middle, self.section_at_x(x))
-        stim.amp = 10.  # nA
-        stim.delay = 5. # ms
-        stim.dur = 5.   # ms
+        stim.amp = 1.  # nA
+        stim.delay = 1. # ms
+        stim.dur = 1.   # ms
 
         # NOTE: NEURON will remove the stimulus as soon as it's no longer
         # reachable from python code, so we need to store it.
@@ -79,8 +79,14 @@ if __name__ == "__main__":
     # set up recording vectors
     t = h.Vector()
     t.record(h._ref_t)
-    v = h.Vector()
-    v.record(axon.section_at_f(1)(Axon.middle)._ref_v)
+
+    num_v_traces = 10
+    v_traces = []
+    for i in range(num_v_traces):
+        v = h.Vector()
+        v.record(axon.section_at_f(i/(num_v_traces - 1.))
+            (Axon.middle)._ref_v)
+        v_traces.append(v)
 
     # run the simulation
     h.load_file("stdrun.hoc")
@@ -90,7 +96,8 @@ if __name__ == "__main__":
 
     # plot the results
     pylab.figure(1, figsize=(6,6))
-    pylab.plot(t, v)
+    for v in v_traces:
+        pylab.plot(t, v)
     pylab.xlabel("time (ms)")
     pylab.ylabel("membrane potential (mV)")
     pylab.show()

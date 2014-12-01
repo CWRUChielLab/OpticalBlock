@@ -9,8 +9,8 @@ interpreting any model results at this time.
 
 # Running the simulation
 
-To run the simulation, first compile the conductances (fhm1.mod) using
-nrnivmodl:
+To run the simulation, first open a shell window and compile the conductances
+(fhm1.mod) using nrnivmodl:
 
     cd OpticalBlock
     nrnivmodl

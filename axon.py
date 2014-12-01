@@ -35,7 +35,10 @@ class Axon:
             sec.Ra = 100.
 
             # insert the active channels
-            sec.insert('hh')
+            #sec.insert('hh')
+            sec.insert('fhm1')
+
+            sec.localtemp_fhm1 = 16
 
         # connect the sections end to end into a chain, connecting the right
         # side of each segment to the left side of the next

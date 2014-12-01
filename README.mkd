@@ -7,6 +7,18 @@ The code is currently in an early stage of development and it is likely that
 many parameters are not yet properly set; thus we recommend caution in
 interpreting any model results at this time.
 
+# Running the simulation
+
+To run the simulation, first compile the conductances (fhm1.mod) using
+nrnivmodl:
+
+    cd OpticalBlock
+    nrnivmodl
+
+You can then run the code using NEURON:
+
+    nrniv nrnaxon.py
+
 # License
 
 This code is licensed under the GNU General Public License; see LICENSE.txt for

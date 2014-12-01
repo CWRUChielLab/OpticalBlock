@@ -1,0 +1,13 @@
+OpticalBlock simulation
+=======================
+
+This is a simulation of optical block in an unmylenated axon in NEURON.
+
+The code is currently in an early stage of development and it is likely that
+many parameters are not yet properly set; thus we recommend caution in
+interpreting any model results at this time.
+
+# License
+
+This code is licensed under the GNU General Public License; see LICENSE.txt for
+details.

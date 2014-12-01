@@ -1,64 +1,86 @@
 from neuron import h
 import pylab # (used for plotting)
 
-# NEURON defines a coordinate system along the length of a segment from 0 to 1;
-# for consistency we will define 0 as the left side of the axon and 1 as the
-# right side.
-left_side = 0.
-right_side = 1.
+# A NEURON model of an unmylenated axon
+class Axon:
+    # NEURON defines a coordinate system along the length of a segment from 0 to 1;
+    # for consistency we will define 0 as the left side of the axon and 1 as the
+    # right side.
+    left_side = 0.
+    right_side = 1.
+    middle = 0.5
 
-# create the axon
-def create_axon(
-        num_sections = 1000, # number of compartments along the axon's length
-        length = 1000.,      # total length of axon (um)
-        diam = 1.,           # axonal diameter (um)
-        ):
+    # create the axon
+    def __init__(self,
+            num_sections = 1000, # number of compartments along the axon's length
+            length = 1000.,      # total length of axon (um)
+            diam = 1.,           # axonal diameter (um)
+            ):
 
-    # create the sections
-    sections = [h.Section() for i in range(num_sections)]
+        # store some parameters for future use
+        self.length = length
+        self.stimuli = []
 
-    # initialize the sections
-    for sec in sections:
-        # set the geometry
-        sec.L = length/num_sections
-        sec.diam = diam
+        # create the sections
+        self.sections = [h.Section() for i in range(num_sections)]
 
-        # set the passive properties
-        sec.cm = 1.
-        sec.Ra = 100.
+        # initialize the sections
+        for sec in self.sections:
+            # set the geometry
+            sec.L = length/num_sections
+            sec.diam = diam
 
-        # insert the active channels
-        sec.insert('hh')
+            # set the passive properties
+            sec.cm = 1.
+            sec.Ra = 100.
 
-    # connect the sections end to end into a chain, connecting the right
-    # side of each segment to the left side of the next
-    for i in range(num_sections - 1):
-        sections[i].connect(sections[i+1], left_side, right_side)
+            # insert the active channels
+            sec.insert('hh')
 
-    return sections
+        # connect the sections end to end into a chain, connecting the right
+        # side of each segment to the left side of the next
+        for i in range(num_sections - 1):
+            self.sections[i].connect(self.sections[i+1], Axon.left_side,
+                    Axon.right_side)
 
-# inserts a simple current pulse in the left side of the axon
-# NOTE: you must store the result of this function (an IClamp object),
-# as NEURON will remove the stimulus as soon as python notices the IClamp
-# is no longer in use on the python side of things
-def insert_stim(axon):
-    stim = h.IClamp(left_side, axon[0])
-    stim.amp = 10.  # nA
-    stim.delay = 5. # ms
-    stim.dur = 5.   # ms
-    return stim
+    # get the section a given fraction of the length along the axon
+    def section_at_f(self, f):
+        if (f == 1):
+            # corner case: normally a section extends from the left boundary of
+            # the section up to, but *not* including, the right boundary (which
+            # is the left boundary of the next section).  The rightmost section
+            # needs to include its right boundary, however.
+            return self.sections[-1]
+        else:
+            return self.sections[int(f * len(self.sections))]
+
+    # get the section containing the given position along the axon
+    def section_at_x(self, x):
+        return self.section_at_f(x / self.length)
+
+    # insert a simple current at the given position
+    def insert_stim(self, x=0.):
+        stim = h.IClamp(Axon.middle, self.section_at_x(x))
+        stim.amp = 10.  # nA
+        stim.delay = 5. # ms
+        stim.dur = 5.   # ms
+
+        # NOTE: NEURON will remove the stimulus as soon as it's no longer
+        # reachable from python code, so we need to store it.
+        self.stimuli.append(stim)
+
 
 # if we're running this code directly (vs. importing it as a library),
 # run a simple simulation and generate a demo plot
 if __name__ == "__main__":
-    axon = create_axon()
-    stim = insert_stim(axon)
+    axon = Axon()
+    axon.insert_stim()
 
     # set up recording vectors
     t = h.Vector()
     t.record(h._ref_t)
     v = h.Vector()
-    v.record(axon[-1](right_side)._ref_v)
+    v.record(axon.section_at_f(1)(Axon.middle)._ref_v)
 
     # run the simulation
     h.load_file("stdrun.hoc")

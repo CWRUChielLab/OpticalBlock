@@ -91,11 +91,16 @@ if __name__ == "__main__":
             (Axon.middle)._ref_v)
         v_traces.append(v)
 
+    # initialize the simulation
+    h.dt = 0.025 # integration time step, in ms
+    tstop = 19.9   # duration of integration
+    v_init = -65 # initial membrane potential, in mV
+    h.finitialize(v_init)
+    h.fcurrent()
+
     # run the simulation
-    h.load_file("stdrun.hoc")
-    h.init()
-    h.tstop = 20.
-    h.run()
+    while h.t < tstop:
+        h.fadvance()
 
     # plot the results
     pylab.figure(1, figsize=(6,6))

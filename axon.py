@@ -170,8 +170,3 @@ if __name__ == "__main__":
     pylab.xlabel("time (ms)")
     pylab.ylabel("membrane potential (mV)")
     pylab.show()
-
-    # pdf and png export seem to be broken in NEURON - see comment here
-    # http://www.neuron.yale.edu/phpbb/viewtopic.php?f=2&t=2097 -
-    # thus we export the figure as an eps
-    pylab.savefig("demo_plot.eps") #, bbox_inches='tight')

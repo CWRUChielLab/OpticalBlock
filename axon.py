@@ -37,34 +37,43 @@ def create_axon(
 
     return sections
 
-axon = create_axon()
+# inserts a simple current pulse in the left side of the axon
+# NOTE: you must store the result of this function (an IClamp object),
+# as NEURON will remove the stimulus as soon as python notices the IClamp
+# is no longer in use on the python side of things
+def insert_stim(axon):
+    stim = h.IClamp(left_side, axon[0])
+    stim.amp = 10.  # nA
+    stim.delay = 5. # ms
+    stim.dur = 5.   # ms
+    return stim
 
-# insert the stimulus
-stim = h.IClamp(left_side, axon[0])
-stim.amp = 10.
-stim.delay = 5.
-stim.dur = 5.
+# if we're running this code directly (vs. importing it as a library),
+# run a simple simulation and generate a demo plot
+if __name__ == "__main__":
+    axon = create_axon()
+    stim = insert_stim(axon)
 
-# set up recording vectors
-t = h.Vector()
-t.record(h._ref_t)
-v = h.Vector()
-v.record(axon[-1](right_side)._ref_v)
+    # set up recording vectors
+    t = h.Vector()
+    t.record(h._ref_t)
+    v = h.Vector()
+    v.record(axon[-1](right_side)._ref_v)
 
-# run the simulation
-h.load_file("stdrun.hoc")
-h.init()
-h.tstop = 20.
-h.run()
+    # run the simulation
+    h.load_file("stdrun.hoc")
+    h.init()
+    h.tstop = 20.
+    h.run()
 
-# plot the results
-pylab.figure(1, figsize=(6,6))
-pylab.plot(t, v)
-pylab.xlabel("time (ms)")
-pylab.ylabel("membrane potential (mV)")
-pylab.show()
+    # plot the results
+    pylab.figure(1, figsize=(6,6))
+    pylab.plot(t, v)
+    pylab.xlabel("time (ms)")
+    pylab.ylabel("membrane potential (mV)")
+    pylab.show()
 
-# pdf and png export seem to be broken in NEURON - see comment here
-# http://www.neuron.yale.edu/phpbb/viewtopic.php?f=2&t=2097 -
-# thus we export the figure as an eps
-pylab.savefig("plot.eps") #, bbox_inches='tight')
+    # pdf and png export seem to be broken in NEURON - see comment here
+    # http://www.neuron.yale.edu/phpbb/viewtopic.php?f=2&t=2097 -
+    # thus we export the figure as an eps
+    pylab.savefig("demo_plot.eps") #, bbox_inches='tight')

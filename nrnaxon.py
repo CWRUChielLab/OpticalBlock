@@ -1,5 +1,4 @@
 from neuron import h
-import pylab # (used for plotting)
 
 # A NEURON model of an unmylenated axon
 class Axon:
@@ -140,7 +139,7 @@ if __name__ == "__main__":
     t = h.Vector()
     t.record(h._ref_t)
 
-    num_v_traces = 20
+    num_v_traces = 30
     v_traces = []
     for i in range(num_v_traces):
         v = h.Vector()
@@ -152,6 +151,13 @@ if __name__ == "__main__":
             (Axon.middle)._ref_v)
         v_traces.append(v)
 
+    # set up NEURON plotting code
+    g = h.Graph()
+    g.size(0, 3, -80, 55)
+    for i in range(num_v_traces):
+        g.addvar('v(0.5)',
+                sec=axon.section_at_f((i+1) * 1.0 / (num_v_traces + 1)))
+
     # initialize the simulation
     h.dt = 0.005 # integration time step, in ms
     tstop = 2.99 # duration of integration
@@ -160,13 +166,21 @@ if __name__ == "__main__":
     h.fcurrent()
 
     # run the simulation
+    g.begin()
     while h.t < tstop:
         h.fadvance()
+        g.plot(h.t)
+    g.flush()
 
-    # plot the results
-    pylab.figure(1, figsize=(6,6))
-    for v in v_traces:
-        pylab.plot(t, v)
-    pylab.xlabel("time (ms)")
-    pylab.ylabel("membrane potential (mV)")
-    pylab.show()
+    # pylab doesn't seem to run reliably on the mac version of neuron; thus
+    # I've commented this out for the moment
+    if False:
+        # plot the results
+        import pylab # (used for plotting)
+        pylab.figure(1, figsize=(6,6))
+        for v in v_traces:
+            pylab.plot(t, v)
+        pylab.xlabel("time (ms)")
+        pylab.ylabel("membrane potential (mV)")
+        pylab.show()
+

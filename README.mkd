@@ -17,7 +17,7 @@ To run the simulation, first open a shell window and compile the conductances
 
 You can then run the code using NEURON:
 
-    nrniv nrnaxon.py
+    nrngui nrnaxon.py
 
 # License
 

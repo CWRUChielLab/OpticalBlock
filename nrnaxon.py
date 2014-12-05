@@ -12,17 +12,27 @@ class Axon:
 
     # Create the axon
     def __init__(self,
-            num_sections = 1000, # number of compartments along the axon's length
+            num_sections = 1000, # number of compartments along the axon
             length = 1000.,      # total length of axon (um)
             diam = 1.,           # axonal diameter (um)
+            R_axial = 100.       # axial resistivity (Ohm cm^2) at 20 degrees C
             ):
 
         # store some parameters for future use
         self.length = length
+        self.R_axial = R_axial
+        self.q10_R_axial = 1/1.3 # from Mou et al 2012
+        self.q10_R_axial_T = 18.5 # reference temp for Q10
         self.stimuli = []
 
         # create the sections
         self.sections = [h.Section() for i in range(num_sections)]
+
+        # connect the sections end to end into a chain, connecting the right
+        # side of each segment to the left side of the next
+        for i in range(num_sections - 1):
+            self.sections[i].connect(self.sections[i+1], Axon.left_side,
+                    Axon.right_side)
 
         # initialize the sections
         for sec in self.sections:
@@ -32,19 +42,13 @@ class Axon:
 
             # set the passive properties
             sec.cm = 1.
-            sec.Ra = 100.
 
             # insert the active channels
             #sec.insert('hh')
             sec.insert('fhm1')
 
-            sec.localtemp_fhm1 = 16
-
-        # connect the sections end to end into a chain, connecting the right
-        # side of each segment to the left side of the next
-        for i in range(num_sections - 1):
-            self.sections[i].connect(self.sections[i+1], Axon.left_side,
-                    Axon.right_side)
+        # initialize the temperature-dependent properties
+        self.set_temp(16)
 
 
     # Get the index of the section at the given length along the axon
@@ -122,7 +126,10 @@ class Axon:
             temp_at_x = lambda x: temp
 
         def set_section_temp(sec, x):
-            sec.localtemp_fhm1 = temp_at_x(x)
+            local_temp = temp_at_x(x)
+            sec.localtemp_fhm1 = local_temp
+            sec.Ra = self.R_axial * self.q10_R_axial**(
+                    (local_temp - self.q10_R_axial_T)/10.)
 
         self.apply_to_sections(set_section_temp, x_start, x_end);
 
@@ -133,7 +140,7 @@ class Axon:
 if __name__ == "__main__":
     axon = Axon()
     axon.insert_stim()
-    axon.set_temp(54.49, 300, 600)
+    axon.set_temp(54.8, 300, 600)
 
     # set up recording vectors
     t = h.Vector()

@@ -142,7 +142,7 @@ if __name__ == "__main__":
     axon.insert_stim()
     axon.set_temp(54.8, 300, 600)
 
-    # set up recording vectors
+    # set up recording vectors for python plots and the csv file
     t = h.Vector()
     t.record(h._ref_t)
 
@@ -191,3 +191,13 @@ if __name__ == "__main__":
         pylab.ylabel("membrane potential (mV)")
         pylab.show()
 
+    # save the data as a csv
+    with open('demo_traces.csv', 'w') as csv_file:
+        # start with a header of the form "t_ms, V0_mV, V1_mv, V2_mV,..."
+        csv_file.write(", ".join(
+            ["t_ms"] + ["V{0}_mV".format(i) for i in range(num_v_traces)]
+            ) + "\n")
+
+        # write the time and each of the recorded voltages at that time
+        for row in zip(t, *v_traces):
+            csv_file.write(", ".join([str(x) for x in row]) + "\n")

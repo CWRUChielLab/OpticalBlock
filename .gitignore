@@ -1,2 +1,5 @@
-*.swp
+*.csv
 x86_64/*
+*.swp
+*.RData
+*.Rhistory

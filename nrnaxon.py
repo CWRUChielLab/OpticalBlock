@@ -19,8 +19,9 @@ class Axon:
             ):
 
         # store some parameters for future use
-        self.length = length
-        self.R_axial = R_axial
+        self.length = float(length)
+        self.diam = float(diam)
+        self.R_axial = float(R_axial)
         self.q10_R_axial = 1/1.3 # from Mou et al 2012
         self.q10_R_axial_T = 18.5 # reference temp for Q10
         self.stimuli = []
@@ -38,7 +39,7 @@ class Axon:
         for sec in self.sections:
             # set the geometry
             sec.L = length/num_sections
-            sec.diam = diam
+            sec.diam = self.diam
 
             # set the passive properties
             sec.cm = 1.

@@ -31,6 +31,33 @@ def bisect(
     return (xlow, xhigh)
 
 
+
+# runs the model and returns True iff an action potential reaches the end
+# (last 1%) of the axon
+def is_blocked(axon):
+    v = h.Vector()
+    v.record(axon.section_at_f(0.99)
+        (Axon.middle)._ref_v)
+
+    # initialize the simulation
+    h.dt = 0.005 # integration time step, in ms
+    tstop = 2.99 # duration of integration
+    v_init = -65 # initial membrane potential, in mV
+    h.finitialize(v_init)
+    h.fcurrent()
+
+    # run the simulation
+    while h.t < tstop:
+        h.fadvance()
+
+    threshold = -45 # mV
+    if max(v) >= threshold:
+        return False
+    else:
+        return True
+
+
+
 def heat_block_temp_at_width(block_width):
     axon_length = 300.
     axon_num_sections = 3000
@@ -43,55 +70,56 @@ def heat_block_temp_at_width(block_width):
                 (axon_length - block_width)/2.,
                 (axon_length + block_width)/2.
                 )
-
-        v = h.Vector()
-        v.record(axon.section_at_f(0.99)
-            (Axon.middle)._ref_v)
-
-        # initialize the simulation
-        h.dt = 0.005 # integration time step, in ms
-        tstop = 2.99 # duration of integration
-        v_init = -65 # initial membrane potential, in mV
-        h.finitialize(v_init)
-        h.fcurrent()
-
-        # run the simulation
-        while h.t < tstop:
-            h.fadvance()
-
-        threshold = -45 # mV
-        if max(v) >= threshold:
-            return False
-        else:
-            return True
+        return is_blocked(axon)
 
     bounds = bisect(heat_block, 0, 200, 20)
     return sum(bounds)/2.
 
 
-if __name__ == "__main__":
-    max_width = 82.
-    min_width = 2.
-    num_points = 20 + 1
+def record_plot(
+        func,
+        xmin,
+        xmax,
+        title,
+        xlabel,
+        ylabel,
+        num_points=11
+        ):
+    csv_filename = title.replace(' ','_') + '.csv'
 
-    widths = []
-    temps = []
+    xs = []
+    ys = []
     for i in range(num_points):
         # space the points equally from max_width to min_width
-        width = i * (max_width - min_width) / (num_points - 1) + min_width
+        x = i * (xmax - xmin) * 1.0 / (num_points - 1) + xmin
         try:
-            temp = heat_block_temp_at_width(width)
+            y = func(x)
         except ValueError:
-            temp = float("NaN")
-        print((width, temp))
-        widths.append(width)
-        temps.append(temp)
+            y = float("NaN")
+        print((x, y))
+        xs.append(x)
+        ys.append(y)
 
     # save the data as a csv
-    with open('square_block_threshold.csv', 'w') as csv_file:
+    with open(csv_filename, 'w') as csv_file:
         # write a header
-        csv_file.write("width_um,temp_C")
+        csv_file.write("{0},{1}\n".format(
+                xlabel.replace(' ','_').replace('(','').replace(')',''),
+                ylabel.replace(' ','_').replace('(','').replace(')','')
+                ))
 
         # write each data point
-        for width, temp in zip(widths, temps):
-            csv_file.write("{0},{1}\n".format(width, temp))
+        for x, y in zip(xs, ys):
+            csv_file.write("{0},{1}\n".format(x, y))
+
+
+if __name__ == "__main__":
+    record_plot(
+        func=heat_block_temp_at_width,
+        xmin = 2,
+        xmax = 82,
+        title = "Block temperature vs square block width",
+        xlabel = "Block width (um)",
+        ylabel = "Temperature (C)",
+        num_points=21
+        )

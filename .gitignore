@@ -1,4 +1,5 @@
 *.csv
+*.pdf
 x86_64/*
 *.pyc
 *.swp

@@ -1,5 +1,6 @@
 *.csv
 x86_64/*
+*.pyc
 *.swp
 *.RData
 *.Rhistory

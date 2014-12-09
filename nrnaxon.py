@@ -1,5 +1,9 @@
 from neuron import h
 
+import re   # regular expressions
+import json # used for reading the config file
+
+
 # A NEURON model of an unmylenated axon
 class Axon:
     # NEURON defines a coordinate system along the length of a section from 0 to 1;
@@ -11,45 +15,36 @@ class Axon:
 
 
     # Create the axon
-    def __init__(self,
-            num_sections = 1000, # number of compartments along the axon
-            length = 1000.,      # total length of axon (um)
-            diam = 1.,           # axonal diameter (um)
-            R_axial = 100.       # axial resistivity (Ohm cm^2) at 20 degrees C
-            ):
+    def __init__(self, config):
 
-        # store some parameters for future use
-        self.length = float(length)
-        self.diam = float(diam)
-        self.R_axial = float(R_axial)
-        self.q10_R_axial = 1/1.3 # from Mou et al 2012
-        self.q10_R_axial_T = 18.5 # reference temp for Q10
+        # store parameters for future use
+        self.config = config
         self.stimuli = []
 
         # create the sections
-        self.sections = [h.Section() for i in range(num_sections)]
+        self.sections = [h.Section() for i in range(config['num_sections'])]
 
         # connect the sections end to end into a chain, connecting the right
         # side of each segment to the left side of the next
-        for i in range(num_sections - 1):
+        for i in range(len(self.sections) - 1):
             self.sections[i].connect(self.sections[i+1], Axon.left_side,
                     Axon.right_side)
 
         # initialize the sections
         for sec in self.sections:
             # set the geometry
-            sec.L = length/num_sections
-            sec.diam = self.diam
+            sec.L = float(config['axon_length'])/len(self.sections)
+            sec.diam = config['axon_diameter']
 
             # set the passive properties
-            sec.cm = 1.
+            sec.cm = config['membrane_capacitance']
 
             # insert the active channels
             #sec.insert('hh')
             sec.insert('fhm1')
 
         # initialize the temperature-dependent properties
-        self.set_temp(16)
+        self.set_temp(config['axon_temperature'])
 
 
     # Get the index of the section at the given length along the axon
@@ -77,7 +72,7 @@ class Axon:
 
     # Get the section containing the given position along the axon
     def section_at_x(self, x):
-        return self.section_at_f(x / self.length)
+        return self.section_at_f(x / float(config['axon_length']))
 
 
     # Apply a function to all the sections that are part of a given range
@@ -91,14 +86,14 @@ class Axon:
             ):
         # parameter checking and cleanup
         if x_end == None:
-            x_end = self.length
+            x_end = float(config['axon_length'])
         if x_end < x_start:
             raise ValueError("x_end must be to the right of x_start")
 
-        for i in range(self.section_id_at_f(x_start / self.length),
-                self.section_id_at_f(x_end / self.length) + 1):
+        for i in range(self.section_id_at_f(x_start / float(config['axon_length'])),
+                self.section_id_at_f(x_end / float(config['axon_length'])) + 1):
             func(self.sections[i],
-                    (i + Axon.middle) * self.length / len(self.sections))
+                    (i + Axon.middle) * float(config['axon_length']) / len(self.sections))
 
 
     # Insert a simple current at the given position
@@ -129,8 +124,9 @@ class Axon:
         def set_section_temp(sec, x):
             local_temp = temp_at_x(x)
             sec.localtemp_fhm1 = local_temp
-            sec.Ra = self.R_axial * self.q10_R_axial**(
-                    (local_temp - self.q10_R_axial_T)/10.)
+            sec.Ra = (self.config['axial_resistance'] *
+                    self.config['axial_resistance_Q10']**(
+                    (local_temp - self.config['axial_resistance_T'])/10.))
 
         self.apply_to_sections(set_section_temp, x_start, x_end);
 
@@ -253,7 +249,19 @@ def record_plot(
 # if we're running this code directly (vs. importing it as a library),
 # run a simple simulation and generate a demo plot
 if __name__ == "__main__":
-    axon = Axon()
+
+    # read the configuration file
+    with open('defaultconfig.yaml','r') as f:
+        # read the entire file as text
+        config_text = f.read(-1)
+
+        # remove comments (from '#' to the end of the line)
+        bare_config_text = re.sub('#[^\n]*\n', '\n', config_text)
+
+        # parse it as JSON
+        config = json.loads(bare_config_text)
+
+    axon = Axon(config)
     axon.insert_stim()
     axon.set_temp(54.8, 300, 600)
 
@@ -281,10 +289,9 @@ if __name__ == "__main__":
                 sec=axon.section_at_f((i+1) * 1.0 / (num_v_traces + 1)))
 
     # initialize the simulation
-    h.dt = 0.005 # integration time step, in ms
-    tstop = 2.99 # duration of integration
-    v_init = -65 # initial membrane potential, in mV
-    h.finitialize(v_init)
+    h.dt = config['max_time_step']
+    tstop = config['integration_time']
+    h.finitialize(config['initial_membrane_potential'])
     h.fcurrent()
 
     # run the simulation
@@ -293,18 +300,6 @@ if __name__ == "__main__":
         h.fadvance()
         g.plot(h.t)
     g.flush()
-
-    # pylab doesn't seem to run reliably on the mac version of neuron; thus
-    # I've commented this out for the moment
-    if False:
-        # plot the results
-        import pylab # (used for plotting)
-        pylab.figure(1, figsize=(6,6))
-        for v in v_traces:
-            pylab.plot(t, v)
-        pylab.xlabel("time (ms)")
-        pylab.ylabel("membrane potential (mV)")
-        pylab.show()
 
     # save the data as a csv
     with open('demo_traces.csv', 'w') as csv_file:

@@ -3,6 +3,8 @@ from neuron import h
 import re   # regular expressions
 import json # used for reading the config file
 import sys  # used for command line parsing
+import bisect
+import copy
 
 # A NEURON model of an unmylenated axon
 class Axon:
@@ -156,7 +158,7 @@ class Axon:
 # temperature).  Returns a pair containing the new upper and lower bounds.
 # Throws a ValueError if the function has the same value at the upper and
 # lower bounds.
-def bisect(
+def boolean_bisect(
         func,          # a function of the form f(x) that returns a boolean
         lower_bound,   # a value known to be below the change
         upper_bound,   # a value known to be above the change
@@ -180,6 +182,73 @@ def bisect(
 
     return (xlow, xhigh)
 
+
+# perform linear interpolation given the list of points describing the
+# function (xs and ys) and a point at which to evaluate the function, x
+def interpolate(xs, ys, x):
+    # assume the function is constant beyond the end points given
+    if x <= xs[0]:
+        return ys[0]
+    elif x >= xs[-1]:
+        return ys[-1]
+    else:
+        i = bisect.bisect(xs, x)
+        f = float(xs[i] - x)/(xs[i] - xs[i-1])
+        return ys[i-1] * f + ys[i] * (1 - f)
+
+
+def is_numeric(x):
+    return type(x) == int or type(x) == float
+
+def is_numeric_list(x):
+    if type(x) != list:
+        return False
+    for item in x:
+        if not is_numeric(item):
+            return False
+    return True
+
+
+def simplify_config(config):
+
+    newconfig = copy.deepcopy(config)
+
+    def simplify_pass(value, context):
+        if type(value) == str:
+            # replace variables with their valueues
+            if (context.has_key(value)):
+                return context[value], True
+        elif type(value) == list:
+            list_changed = False
+            for i in range(len(value)):
+                value[i],item_changed = simplify_pass(value[i], context)
+                list_changed = list_changed or item_changed
+            return value, list_changed
+        elif type(value) == dict:
+            dict_changed = False
+
+            # simplify the components
+            for key,val in value.items():
+                value[key],item_changed = simplify_pass(value[key], context)
+                dict_changed = dict_changed or item_changed
+
+            # see if we can collapse the whole thing
+            if value.has_key('action'):
+                action = value['action']
+                if action == 'interpolate':
+                    if (is_numeric_list(value['xs']) and
+                            is_numeric_list(value['ys']) and
+                            is_numeric(value['x'])):
+                        return interpolate(value['xs'], value['ys'], value['x']), True
+            return value, dict_changed
+
+        return value, False
+
+    changed = True
+    while changed:
+        newconfig,changed = simplify_pass(newconfig, newconfig)
+
+    return newconfig
 
 
 # runs the model and returns True iff an action potential reaches the end
@@ -285,6 +354,7 @@ if __name__ == '__main__':
 
             # parse it as JSON
             config.update(json.loads(bare_config_text))
+    config = simplify_config(config)
 
     axon = Axon(config)
     axon.insert_stim()

@@ -2,7 +2,7 @@ from neuron import h
 
 import re   # regular expressions
 import json # used for reading the config file
-
+import sys  # used for command line parsing
 
 # A NEURON model of an unmylenated axon
 class Axon:
@@ -248,18 +248,43 @@ def record_plot(
 
 # if we're running this code directly (vs. importing it as a library),
 # run a simple simulation and generate a demo plot
-if __name__ == "__main__":
+if __name__ == '__main__':
 
-    # read the configuration file
-    with open('defaultconfig.yaml','r') as f:
-        # read the entire file as text
-        config_text = f.read(-1)
+    # We need to to some hacking to support command line parameters.  NEURON
+    # tries to run all of the arguments on the command line, but we want to
+    # use these extra parameters for config files.  This is not a disaster
+    # because NEURON will try to run the config files after running all of the
+    # code in this file, so errors don't prevent us from getting useful work
+    # done (and JSON may not even cause an error).  They can, however, cause
+    # NEURON to leave the user at a NEURON prompt, which prevents using this
+    # code from makefiles, bash scripts, and other non-interactive tools.  To
+    # work around this, if we're not running in interactive mode we can
+    # terminate NEURON after running this script (before it tries to run the
+    # remaining command line arguments).
 
-        # remove comments (from '#' to the end of the line)
-        bare_config_text = re.sub('#[^\n]*\n', '\n', config_text)
+    # Assume that the user doesn't want a NEURON prompt unless they've invoked
+    # nrngui or specified '-' on the command line (standard for NEURON).
+    interactive = "nrngui" in sys.argv[0] or "-" in sys.argv
 
-        # parse it as JSON
-        config = json.loads(bare_config_text)
+    # extract the config files
+    configfiles = (['defaultconfig.yaml'] +
+        [arg for arg in sys.argv if ".yaml" in arg])
+
+    print('Using config files: {0}\n'.format(", ".join(configfiles)))
+
+    # read the configuration files in order, allowing later config files
+    # to override earlier settings.
+    config = {}
+    for filename in configfiles:
+        with open(filename,'r') as f:
+            # read the entire file as text
+            config_text = f.read(-1)
+
+            # remove comments (from '#' to the end of the line)
+            bare_config_text = re.sub('#[^\n]*\n', '\n', config_text)
+
+            # parse it as JSON
+            config.update(json.loads(bare_config_text))
 
     axon = Axon(config)
     axon.insert_stim()
@@ -311,3 +336,7 @@ if __name__ == "__main__":
         # write the time and each of the recorded voltages at that time
         for row in zip(t, *v_traces):
             csv_file.write(", ".join([str(x) for x in row]) + "\n")
+
+    # quit if we're not in interactive mode (see command line options above)
+    if not interactive:
+        h.quit();

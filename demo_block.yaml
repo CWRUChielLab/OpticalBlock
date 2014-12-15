@@ -1,0 +1,11 @@
+# Demonstrates a simple thermal block by uniformly heating 300 um of axon
+{
+    # temperature
+    "axon_temperature" : { # °C
+        "action" : "interpolate",
+        "xs" : [ 300, 300.00001, 600,   600.00001 ],
+        "ys" : [  16,  54.8,      54.8,  16       ],
+        "x" : "x"
+    }
+}
+

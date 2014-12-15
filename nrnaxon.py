@@ -45,8 +45,8 @@ class Axon:
             #sec.insert('hh')
             sec.insert('fhm1')
 
-        # initialize the temperature-dependent properties
-        self.set_temp(config['axon_temperature'])
+        # set the various section parameters
+        self.update_sections()
 
 
     # Get the index of the section at the given length along the axon
@@ -110,6 +110,35 @@ class Axon:
         self.stimuli.append(stim)
 
 
+    def set_section_temp(self, sec, temp):
+        sec.localtemp_fhm1 = temp
+        sec.Ra = (self.config['axial_resistance'] *
+                self.config['axial_resistance_Q10']**(
+                (temp - self.config['axial_resistance_T'])/10.))
+
+
+    # updates the section parameters based on the current config
+    def update_sections(self):
+        def set_section_params(sec, x):
+            # fill in the position and evaluate any configuration settings
+            # that use it.
+            config = self.config.copy()
+            config[u'x'] = x
+            config = simplify_config(config)
+
+            # set the geometry
+            sec.L = float(config['axon_length'])/len(self.sections)
+            sec.diam = config['axon_diameter']
+
+            # set the passive properties
+            sec.cm = config['membrane_capacitance']
+
+            # set the temperature
+            self.set_section_temp(sec, config['axon_temperature'])
+
+        self.apply_to_sections(set_section_params);
+
+
     # Set the temperature of a range of sections
     def set_temp(self,
             temp,       # a temperature (Celsius) or a function of the form
@@ -124,11 +153,7 @@ class Axon:
             temp_at_x = lambda x: temp
 
         def set_section_temp(sec, x):
-            local_temp = temp_at_x(x)
-            sec.localtemp_fhm1 = local_temp
-            sec.Ra = (self.config['axial_resistance'] *
-                    self.config['axial_resistance_Q10']**(
-                    (local_temp - self.config['axial_resistance_T'])/10.))
+            self.set_section_temp(sec, temp_at_x(x))
 
         self.apply_to_sections(set_section_temp, x_start, x_end);
 
@@ -214,7 +239,7 @@ def simplify_config(config):
     newconfig = copy.deepcopy(config)
 
     def simplify_pass(value, context):
-        if type(value) == str:
+        if type(value) == str or type(value) == unicode:
             # replace variables with their valueues
             if (context.has_key(value)):
                 return context[value], True
@@ -229,7 +254,7 @@ def simplify_config(config):
 
             # simplify the components
             for key,val in value.items():
-                value[key],item_changed = simplify_pass(value[key], context)
+                value[key], item_changed = simplify_pass(value[key], context)
                 dict_changed = dict_changed or item_changed
 
             # see if we can collapse the whole thing
@@ -358,7 +383,6 @@ if __name__ == '__main__':
 
     axon = Axon(config)
     axon.insert_stim()
-    axon.set_temp(54.8, 300, 600)
 
     # set up recording vectors for python plots and the csv file
     t = h.Vector()

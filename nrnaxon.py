@@ -17,7 +17,7 @@ class Axon:
 
 
     # Create the axon
-    def __init__(self, config):
+    def __init__(self, config, delay_config=False):
 
         # store parameters for future use
         self.config = config
@@ -32,21 +32,14 @@ class Axon:
             self.sections[i].connect(self.sections[i+1], Axon.left_side,
                     Axon.right_side)
 
-        # initialize the sections
+        # insert the active channels
         for sec in self.sections:
-            # set the geometry
-            sec.L = float(config['axon_length'])/len(self.sections)
-            sec.diam = config['axon_diameter']
-
-            # set the passive properties
-            sec.cm = config['membrane_capacitance']
-
-            # insert the active channels
             #sec.insert('hh')
             sec.insert('fhm1')
 
-        # set the various section parameters
-        self.update_sections()
+        if not delay_config:
+            # set the various section parameters
+            self.update_sections()
 
 
     # Get the index of the section at the given length along the axon
@@ -261,10 +254,13 @@ def simplify_config(config):
             if value.has_key('action'):
                 action = value['action']
                 if action == 'interpolate':
-                    if (is_numeric_list(value['xs']) and
-                            is_numeric_list(value['ys']) and
-                            is_numeric(value['x'])):
-                        return interpolate(value['xs'], value['ys'], value['x']), True
+                    if (is_numeric_list(value['example_inputs']) and
+                            is_numeric_list(value['example_outputs']) and
+                            is_numeric(value['new_input'])):
+                        return (
+                            interpolate(value['example_inputs'],
+                                value['example_outputs'], value['new_input']),
+                            True)
             return value, dict_changed
 
         return value, False
@@ -339,6 +335,130 @@ def record_plot(
             csv_file.write("{0},{1}\n".format(x, y))
 
 
+def run_single_simulation(config, interactive):
+    axon = Axon(config)
+    axon.insert_stim()
+
+    # set up recording vectors for python plots and the csv file
+    t = h.Vector()
+    t.record(h._ref_t)
+
+    num_v_traces = 30
+    v_traces = []
+    for i in range(num_v_traces):
+        v = h.Vector()
+        v.record(axon.section_at_f(
+            # record at num_v_traces points along the axon, equally spaced
+            # from eachother and from the end points (since we don't care
+            # about things like the impedance mismatch at the ends)
+            (i + 1) * 1.0 / (num_v_traces + 1))
+            (Axon.middle)._ref_v)
+        v_traces.append(v)
+
+    # set up NEURON plotting code (if we're in an interactive session)
+    if interactive:
+        g = h.Graph()
+        g.size(0, 3, -80, 55)
+        for i in range(num_v_traces):
+            g.addvar('v(0.5)',
+                    sec=axon.section_at_f((i+1) * 1.0 / (num_v_traces + 1)))
+
+    # initialize the simulation
+    h.dt = config['max_time_step']
+    tstop = config['integration_time']
+    h.finitialize(config['initial_membrane_potential'])
+    h.fcurrent()
+
+    # run the simulation
+    if interactive:
+        g.begin()
+        while h.t < tstop:
+            h.fadvance()
+            g.plot(h.t)
+        g.flush()
+    else:
+        while h.t < tstop:
+            h.fadvance()
+
+    # save the data as a csv
+    with open('demo_traces.csv', 'w') as csv_file:
+        # start with a header of the form "t_ms, V0_mV, V1_mv, V2_mV,..."
+        csv_file.write(", ".join(
+            ["t_ms"] + ["V{0}_mV".format(i) for i in range(num_v_traces)]
+            ) + "\n")
+
+        # write the time and each of the recorded voltages at that time
+        for row in zip(t, *v_traces):
+            csv_file.write(", ".join([str(x) for x in row]) + "\n")
+
+# searches a config setting to see if it depends on the given variable
+def has_variable(expr, var):
+    if type(expr) == str or type(expr) == unicode:
+        return expr == var
+    elif type(expr) == list or type(expr) == tuple:
+        for item in expr:
+            if has_variable(item, var):
+                return True
+        return False
+    elif type(expr) == dict:
+        for key,val in expr.items():
+            if has_variable(val, var):
+                return True
+        return False
+
+def run_sweep_simulation(config, interactive):
+    axon = Axon(config, delay_config=True)
+    axon.insert_stim()
+
+    # save the data as a csv
+    csv_filename = "sweep.csv"
+    with open(csv_filename, 'w') as csv_file:
+
+        # Find the variables which change from sweep to sweep
+        swept_vars = [key for key,val in config.items() if
+                has_variable(val, "sweep_param") or
+                has_variable(val, "threshold_param")]
+
+        # write out the headers
+        csv_file.write(", ".join(swept_vars) + "\n")
+
+        for i in range(config['param_sweep_steps']):
+            # space the points equally from max_width to min_width
+            sweepconfig = copy.copy(config)
+            sweepconfig["sweep_param"] = i * 1.0 / (
+                    sweepconfig["param_sweep_steps"] - 1)
+            sweepconfig = simplify_config(sweepconfig)
+
+            def threshold_block_test(threshold_param):
+                sweepconfig[u"threshold_param"] = threshold_param
+                axon.config = simplify_config(sweepconfig)
+                axon.update_sections()
+                blocked = is_blocked(axon)
+                print("  " + ", ".join(
+                    ["blocked:{0}".format(blocked)] +
+                    ["{0}:{1}".format(s,axon.config[s])
+                        for s in swept_vars if is_numeric(axon.config[s])]))
+                return blocked
+
+            try:
+                bounds = boolean_bisect(threshold_block_test, 0, 1, 10)
+                threshold = sum(bounds)/2.
+            except ValueError:
+                threshold = float("NaN")
+
+            # calculate all parameters at the threshold
+            sweepconfig[u"threshold_param"] = threshold
+            threshold_config = simplify_config(sweepconfig)
+
+            print("Threshold values: " + ", ".join(
+                ["{0}:{1}".format(s,axon.config[s])
+                    for s in swept_vars if is_numeric(axon.config[s])]))
+
+            # write out the values
+            csv_file.write(", ".join(
+                ["{0}".format(axon.config[s])
+                    for s in swept_vars if is_numeric(axon.config[s])]) + "\n")
+
 
 # if we're running this code directly (vs. importing it as a library),
 # run a simple simulation and generate a demo plot
@@ -381,56 +501,12 @@ if __name__ == '__main__':
             config.update(json.loads(bare_config_text))
     config = simplify_config(config)
 
-    axon = Axon(config)
-    axon.insert_stim()
+    if config['param_sweep_steps'] == 1:
+        run_single_simulation(config, interactive)
+    else:
+        run_sweep_simulation(config, interactive)
 
-    # set up recording vectors for python plots and the csv file
-    t = h.Vector()
-    t.record(h._ref_t)
-
-    num_v_traces = 30
-    v_traces = []
-    for i in range(num_v_traces):
-        v = h.Vector()
-        v.record(axon.section_at_f(
-            # record at num_v_traces points along the axon, equally spaced
-            # from eachother and from the end points (since we don't care
-            # about things like the impedance mismatch at the ends)
-            (i + 1) * 1.0 / (num_v_traces + 1))
-            (Axon.middle)._ref_v)
-        v_traces.append(v)
-
-    # set up NEURON plotting code
-    g = h.Graph()
-    g.size(0, 3, -80, 55)
-    for i in range(num_v_traces):
-        g.addvar('v(0.5)',
-                sec=axon.section_at_f((i+1) * 1.0 / (num_v_traces + 1)))
-
-    # initialize the simulation
-    h.dt = config['max_time_step']
-    tstop = config['integration_time']
-    h.finitialize(config['initial_membrane_potential'])
-    h.fcurrent()
-
-    # run the simulation
-    g.begin()
-    while h.t < tstop:
-        h.fadvance()
-        g.plot(h.t)
-    g.flush()
-
-    # save the data as a csv
-    with open('demo_traces.csv', 'w') as csv_file:
-        # start with a header of the form "t_ms, V0_mV, V1_mv, V2_mV,..."
-        csv_file.write(", ".join(
-            ["t_ms"] + ["V{0}_mV".format(i) for i in range(num_v_traces)]
-            ) + "\n")
-
-        # write the time and each of the recorded voltages at that time
-        for row in zip(t, *v_traces):
-            csv_file.write(", ".join([str(x) for x in row]) + "\n")
-
-    # quit if we're not in interactive mode (see command line options above)
+    # Now that we're done, quit if we're not in interactive mode
+    # (see command line options above)
     if not interactive:
         h.quit();

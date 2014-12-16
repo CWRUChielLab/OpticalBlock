@@ -2,8 +2,8 @@
 # comments (like this one)
 {
     # axon geometry
-    "axon_length"   : 1000,  # microns
-    "axon_diameter" : 1,     # microns
+    "axon_length"   : 1000,  # µm
+    "axon_diameter" : 1,     # µm
 
     # temperature
     "axon_temperature" : 16,  # °C
@@ -16,7 +16,11 @@
     "membrane_capacitance"       : 1,       # µF/cm²
 
     # simulation settings
-    "num_sections"     : 1000,
-    "max_time_step"    : 0.005, # ms
-    "integration_time" : 3      # ms
+    "num_sections"        : 1000,
+    "max_time_step"       : 0.005, # ms
+    "integration_time"    : 3,     # ms
+    "param_sweep_steps"   : 1      # set to > 1 for a parameter sweep, then
+                                   # use sweep_param and threshold_param with
+                                   # interpolate to set the dependent and
+                                   # independent variables (see example).
 }

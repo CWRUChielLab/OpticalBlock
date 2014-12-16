@@ -1,0 +1,43 @@
+# Finds the minimum blocking temperature over a range of square block widths
+{
+    # axon geometry
+    "axon_length"   : 300,  # µm
+
+    # temperature
+    "base_temp" : 16,
+    "block_temp" : {
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1 ],
+        "example_outputs" : [ "base_temp", 200 ],
+        "new_input" : "threshold_param"
+    },
+    "block_width" : {
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1 ],
+        "example_outputs" : [ 2, 82 ],
+        "new_input" : "sweep_param"
+    },
+    "right_edge_of_block" : {
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1000 ],
+        "example_outputs" : [ 100, 1100 ],
+        "new_input" : "block_width"
+    },
+    "past_right_edge_of_block" : {
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1000 ],
+        "example_outputs" : [ 100.001, 1100.001 ],
+        "new_input" : "block_width"
+    },
+    "axon_temperature" : { # °C
+        "action" : "interpolate",
+        "example_inputs" : [ 100, 100.00001, "right_edge_of_block",
+            "past_right_edge_of_block" ],
+        "example_outputs" : [ "base_temp", "block_temp", "block_temp", "base_temp" ],
+        "new_input" : "x"
+    },
+
+    # simulation settings
+    "param_sweep_steps"   : 5,
+    "num_sections"        : 3000
+}

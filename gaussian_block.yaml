@@ -1,0 +1,18 @@
+# Demonstrates a simple thermal block with a gaussian spatial temperature
+{
+    # temperature
+    "delta_temperature" : { # °C
+        "action" : "gaussian",
+        "center" : 500, # µm
+        "width"  : 50, # µm
+        "height" : 60, # °C
+        "input"  : "x"
+    },
+    "axon_temperature" : { # °C
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1000 ],
+        "example_outputs" : [ 16, 1016 ],
+        "new_input" : "delta_temperature"
+    }
+}
+

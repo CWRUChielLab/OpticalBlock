@@ -5,6 +5,7 @@ import json # used for reading the config file
 import sys  # used for command line parsing
 import bisect
 import copy
+import math
 
 # A NEURON model of an unmylenated axon
 class Axon:
@@ -132,6 +133,7 @@ class Axon:
             sec.pkbar_fhm1 = config['g_K_bar']
 
             # set the temperature
+            #print x, config['axon_temperature']
             self.set_section_temp(sec, config['axon_temperature'])
 
         self.apply_to_sections(set_section_params);
@@ -266,7 +268,7 @@ def simplify_config(config):
                             interpolate(value['example_inputs'],
                                 value['example_outputs'], value['new_input']),
                             True)
-                elif 'interpolate_from_csv':
+                elif action == 'interpolate_from_csv':
                     if is_numeric(value['new_input']):
                         # read the csv file
                         vals = []
@@ -276,6 +278,16 @@ def simplify_config(config):
                         example_inputs, example_outputs = zip(*vals)
                         return (interpolate(example_inputs, example_outputs,
                             value['new_input']),
+                            True)
+                elif action == 'gaussian':
+                    if (is_numeric(value['center']) and
+                            is_numeric(value['width']) and
+                            is_numeric(value['height']) and
+                            is_numeric(value['input'])):
+                        # calculate the gaussian
+                        return (value['height'] * math.exp(
+                            -(value['input'] - value['center'])**2 /
+                            value['width']**2),
                             True)
 
             return value, dict_changed

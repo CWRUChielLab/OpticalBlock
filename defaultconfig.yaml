@@ -14,6 +14,9 @@
     "axial_resistance_T"         : 18.5,    # °C
     "axial_resistance_Q10"       : 0.76923, # Ohm·cm²
     "membrane_capacitance"       : 1,       # µF/cm²
+    "g_Na_bar"                   : 8.0e-3,  # S/cm²
+    "g_Na_persistent_bar"        : 0.54e-3, # S/cm²
+    "g_K_bar"                    : 1.2e-3,  # S/cm²
 
     # simulation settings
     "num_sections"        : 1000,

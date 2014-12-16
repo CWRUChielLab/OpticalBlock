@@ -126,6 +126,11 @@ class Axon:
             # set the passive properties
             sec.cm = config['membrane_capacitance']
 
+            # set the active properties
+            sec.pnabar_fhm1 = config['g_Na_bar']
+            sec.ppbar_fhm1 = config['g_Na_persistent_bar']
+            sec.pkbar_fhm1 = config['g_K_bar']
+
             # set the temperature
             self.set_section_temp(sec, config['axon_temperature'])
 

@@ -1,0 +1,18 @@
+# Demonstrates reading a file from comsol
+{
+    # stretch out the area of inhibition
+    "x_comsol" : { # K
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1000 ],
+        "example_outputs" : [ 5, 15 ],
+        "new_input" : "x"
+    },
+    # temperature in Kelvin
+    "axon_temperature" : { # °C
+        "action" : "interpolate_from_csv",
+        "csv_file" : "pulse60.csv",
+        "new_input" : "x_comsol"
+    }
+}
+
+

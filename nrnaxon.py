@@ -261,6 +261,18 @@ def simplify_config(config):
                             interpolate(value['example_inputs'],
                                 value['example_outputs'], value['new_input']),
                             True)
+                elif 'interpolate_from_csv':
+                    if is_numeric(value['new_input']):
+                        # read the csv file
+                        vals = []
+                        with open(value['csv_file'], 'r') as f:
+                            for line in f.readlines():
+                                vals.append([float(val) for val in line.split(',')])
+                        example_inputs, example_outputs = zip(*vals)
+                        return (interpolate(example_inputs, example_outputs,
+                            value['new_input']),
+                            True)
+
             return value, dict_changed
 
         return value, False

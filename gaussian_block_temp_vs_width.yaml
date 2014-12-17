@@ -1,0 +1,33 @@
+# Finds the minimum blocking temperature over a range of square block widths
+{
+    # temperature
+    "base_temp" : 16, # µm
+    "block_width" : { # µm
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1 ],
+        "example_outputs" : [ 2, 82 ],
+        "new_input" : "sweep_param"
+    },
+    "block_delta_temp" : { # °C
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1 ],
+        "example_outputs" : [ "base_temp", 200 ],
+        "new_input" : "threshold_param"
+    },
+    "delta_temperature" : { # °C
+        "action" : "gaussian",
+        "center" : 500, # µm
+        "width"  : "block_width", # µm
+        "height" : "block_delta_temp", # °C
+        "input"  : "x"
+    },
+    "axon_temperature" : { # °C
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1000 ],
+        "example_outputs" : [ 16, 1016 ],
+        "new_input" : "delta_temperature"
+    },
+
+    # simulation settings
+    "param_sweep_steps"   : 5
+}

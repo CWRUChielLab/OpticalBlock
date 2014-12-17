@@ -285,10 +285,11 @@ def simplify_config(config):
                             is_numeric(value['height']) and
                             is_numeric(value['input'])):
                         # calculate the gaussian
-                        return (value['height'] * math.exp(
-                            -(value['input'] - value['center'])**2 /
-                            value['width']**2),
-                            True)
+                        result = value['height'] * math.exp(
+                            -float(value['input'] - value['center'])**2 /
+                            value['width']**2)
+                        return (result, True)
+
 
             return value, dict_changed
 
@@ -459,34 +460,50 @@ def run_sweep_simulation(config, interactive):
             sweepconfig = simplify_config(sweepconfig)
 
             def threshold_block_test(threshold_param):
-                sweepconfig[u"threshold_param"] = threshold_param
-                axon.config = simplify_config(sweepconfig)
+                axon.config = sweepconfig.copy()
+                axon.config[u"threshold_param"] = threshold_param
+                axon.config = simplify_config(axon.config)
                 axon.update_sections()
-                blocked = is_blocked(axon)
-                print("  " + ", ".join(
-                    ["blocked:{0}".format(blocked)] +
+                print("  Testing " + ", ".join(
                     ["{0}:{1}".format(s,axon.config[s])
-                        for s in swept_vars if is_numeric(axon.config[s])]))
+                        for s in swept_vars if is_numeric(axon.config[s])]) +
+                    "...")
+                blocked = is_blocked(axon)
+                if blocked:
+                    print("    blocked")
+                else:
+                    print("    not blocked")
                 return blocked
 
+            threshold_config = {}
             try:
                 bounds = boolean_bisect(threshold_block_test, 0, 1, 10)
                 threshold = sum(bounds)/2.
+
+                # calculate all parameters at the threshold
+                sweepconfig[u"threshold_param"] = threshold
+                threshold_config = simplify_config(sweepconfig)
+
             except ValueError:
+                # No threshold found
                 threshold = float("NaN")
 
+                # fill in NaNs for things depending on the threshold param
+                threshold_config = simplify_config(sweepconfig)
+                for key,val in threshold_config.items():
+                    if has_variable(val, u"threshold_param"):
+                        threshold_config[key] = float("NaN")
+
             # calculate all parameters at the threshold
-            sweepconfig[u"threshold_param"] = threshold
-            threshold_config = simplify_config(sweepconfig)
 
             print("Threshold values: " + ", ".join(
-                ["{0}:{1}".format(s,axon.config[s])
-                    for s in swept_vars if is_numeric(axon.config[s])]))
+                ["{0}:{1}".format(s,threshold_config[s])
+                    for s in swept_vars if is_numeric(threshold_config[s])]))
 
             # write out the values
             csv_file.write(", ".join(
-                ["{0}".format(axon.config[s])
-                    for s in swept_vars if is_numeric(axon.config[s])]) + "\n")
+                ["{0}".format(threshold_config[s])
+                    for s in swept_vars if is_numeric(threshold_config[s])]) + "\n")
 
 
 # if we're running this code directly (vs. importing it as a library),

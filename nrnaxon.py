@@ -446,8 +446,9 @@ def run_sweep_simulation(config, interactive):
 
         # Find the variables which change from sweep to sweep
         swept_vars = [key for key,val in config.items() if
-                has_variable(val, "sweep_param") or
-                has_variable(val, "threshold_param")]
+                (has_variable(val, "sweep_param") or
+                has_variable(val, "threshold_param")) and
+                not has_variable(val, "x")]
 
         # write out the headers
         csv_file.write(", ".join(swept_vars) + "\n")

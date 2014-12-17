@@ -212,7 +212,9 @@ def boolean_bisect(
 # function (xs and ys) and a point at which to evaluate the function, x
 def interpolate(xs, ys, x):
     # assume the function is constant beyond the end points given
-    if x <= xs[0]:
+    if math.isnan(x):
+        return float('nan')
+    elif x <= xs[0]:
         return ys[0]
     elif x >= xs[-1]:
         return ys[-1]
@@ -467,7 +469,7 @@ def run_sweep_simulation(config, interactive):
                 axon.update_sections()
                 print("  Testing " + ", ".join(
                     ["{0}:{1}".format(s,axon.config[s])
-                        for s in swept_vars if is_numeric(axon.config[s])]) +
+                        for s in swept_vars]) +
                     "...")
                 blocked = is_blocked(axon)
                 if blocked:
@@ -481,30 +483,24 @@ def run_sweep_simulation(config, interactive):
                 bounds = boolean_bisect(threshold_block_test, 0, 1, 10)
                 threshold = sum(bounds)/2.
 
-                # calculate all parameters at the threshold
-                sweepconfig[u"threshold_param"] = threshold
-                threshold_config = simplify_config(sweepconfig)
-
             except ValueError:
                 # No threshold found
                 threshold = float("NaN")
 
-                # fill in NaNs for things depending on the threshold param
-                threshold_config = simplify_config(sweepconfig)
-                for key,val in threshold_config.items():
-                    if has_variable(val, u"threshold_param"):
-                        threshold_config[key] = float("NaN")
+            # calculate all parameters at the threshold
+            sweepconfig[u"threshold_param"] = threshold
+            threshold_config = simplify_config(sweepconfig)
 
             # calculate all parameters at the threshold
 
             print("Threshold values: " + ", ".join(
                 ["{0}:{1}".format(s,threshold_config[s])
-                    for s in swept_vars if is_numeric(threshold_config[s])]))
+                    for s in swept_vars]))
 
             # write out the values
             csv_file.write(", ".join(
                 ["{0}".format(threshold_config[s])
-                    for s in swept_vars if is_numeric(threshold_config[s])]) + "\n")
+                    for s in swept_vars]) + "\n")
 
 
 # if we're running this code directly (vs. importing it as a library),

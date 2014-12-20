@@ -158,25 +158,6 @@ class Axon:
         self.apply_to_sections(set_section_temp, x_start, x_end);
 
 
-    # Set the sodium conductance of a range of sections
-    def set_gNa(self,
-            gNa,        # a conductance (S/cm^2( or a function of the form
-                        # g(x) that returns the conductance at position x.
-            x_start=0,  # start of the range of positions (0 == left end)
-            x_end=None  # end of the range of positions (None == right end)
-            ):
-        # if conductance is not a function, turn it into one.
-        if hasattr(gNa, '__call__'):
-            gNa_at_x = gNa
-        else:
-            gNa_at_x = lambda x: gNa
-
-        def set_section_gNa(sec, x):
-            sec.pnabar_fhm1 = gNa_at_x(x)
-
-        self.apply_to_sections(set_section_gNa, x_start, x_end);
-
-
 
 # perform a binary search to bound where a function switches from true to
 # false at least once (e.g from not blocked to blocked as a function of
@@ -312,9 +293,9 @@ def is_blocked(axon):
         (Axon.middle)._ref_v)
 
     # initialize the simulation
-    h.dt = 0.005 # integration time step, in ms
-    tstop = 2.99 # duration of integration
-    v_init = -65 # initial membrane potential, in mV
+    h.dt = config['max_time_step']
+    tstop = config['integration_time']
+    v_init = config['initial_membrane_potential']
     h.finitialize(v_init)
     h.fcurrent()
 
@@ -328,43 +309,6 @@ def is_blocked(axon):
     else:
         return True
 
-
-
-def record_plot(
-        func,
-        xmin,
-        xmax,
-        title,
-        xlabel,
-        ylabel,
-        num_points=11
-        ):
-    csv_filename = title.replace(' ','_') + '.csv'
-
-    xs = []
-    ys = []
-    for i in range(num_points):
-        # space the points equally from max_width to min_width
-        x = i * (xmax - xmin) * 1.0 / (num_points - 1) + xmin
-        try:
-            y = func(x)
-        except ValueError:
-            y = float("NaN")
-        print((x, y))
-        xs.append(x)
-        ys.append(y)
-
-    # save the data as a csv
-    with open(csv_filename, 'w') as csv_file:
-        # write a header
-        csv_file.write("{0},{1}\n".format(
-                xlabel.replace(' ','_').replace('(','').replace(')',''),
-                ylabel.replace(' ','_').replace('(','').replace(')','')
-                ))
-
-        # write each data point
-        for x, y in zip(xs, ys):
-            csv_file.write("{0},{1}\n".format(x, y))
 
 
 def run_single_simulation(config, interactive):

@@ -18,12 +18,30 @@
     "g_Na_persistent_bar"        : 0.54e-3, # S/cm²
     "g_K_bar"                    : 1.2e-3,  # S/cm²
 
+    # stimulus settings
+    "stim_position"   : 0,   # µm
+    "stim_amplitude"  : 1,   # nA
+    "stim_start_time" : 0.1, # ms
+    "stim_duration"   : 1,   # ms
+
     # simulation settings
     "num_sections"        : 1000,
     "max_time_step"       : 0.005, # ms
     "integration_time"    : 3,     # ms
-    "param_sweep_steps"   : 1      # set to > 1 for a parameter sweep, then
-                                   # use sweep_param and threshold_param with
-                                   # interpolate to set the dependent and
-                                   # independent variables (see example).
+
+    # sweep settings
+    # Set to parameter sweep to a value greater than 1 for a parameter sweep,
+    # then use sweep_param and threshold_param with interpolate to set the
+    # dependent and independent variables respectively (see example).
+    "param_sweep_steps"    : 1,             # independent var values to test
+    "num_bisections"       : 20,            # dependent var bisections to try
+    "block_test_position"  : "axon_length", # µm
+    "block_test_threshold" : -40,           # mV
+
+    # single integration (non-sweep) settings
+    "num_v_traces" : 30, # num positions at which to record V_membrane
+
+    # output settings
+    "csv_filename" : "" # csv filename (defaults to last config file name)
+
 }

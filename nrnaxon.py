@@ -93,11 +93,16 @@ class Axon:
 
 
     # Insert a simple current at the given position
-    def insert_stim(self, x=0.):
+    def insert_stim(self,
+            x,     # position of the stimuls (um)
+            amp,   # magnitude of the stimulus (nA)
+            delay, # time at which the stimulus starts (ms)
+            dur    # duration of the stimulus (ms)
+            ):
         stim = h.IClamp(Axon.middle, self.section_at_x(x))
-        stim.amp = 1.    # nA
-        stim.delay = 0.1 # ms
-        stim.dur = 1.    # ms
+        stim.amp = amp
+        stim.delay = delay
+        stim.dur = dur
 
         # NOTE: NEURON will remove the stimulus as soon as it's no longer
         # reachable from python code, so we need to store it.
@@ -289,7 +294,7 @@ def simplify_config(config):
 # (last 1%) of the axon
 def is_blocked(axon):
     v = h.Vector()
-    v.record(axon.section_at_f(0.99)
+    v.record(axon.section_at_x(config['block_test_position'])
         (Axon.middle)._ref_v)
 
     # initialize the simulation
@@ -303,8 +308,7 @@ def is_blocked(axon):
     while h.t < tstop:
         h.fadvance()
 
-    threshold = -45 # mV
-    if max(v) >= threshold:
+    if max(v) >= config['block_test_threshold']:
         return False
     else:
         return True
@@ -313,13 +317,14 @@ def is_blocked(axon):
 
 def run_single_simulation(config, interactive):
     axon = Axon(config)
-    axon.insert_stim()
+    axon.insert_stim(config['stim_position'], config['stim_amplitude'],
+            config['stim_start_time'], config['stim_duration'])
 
     # set up recording vectors for python plots and the csv file
     t = h.Vector()
     t.record(h._ref_t)
 
-    num_v_traces = 30
+    num_v_traces = config['num_v_traces']
     v_traces = []
     for i in range(num_v_traces):
         v = h.Vector()
@@ -334,7 +339,7 @@ def run_single_simulation(config, interactive):
     # set up NEURON plotting code (if we're in an interactive session)
     if interactive:
         g = h.Graph()
-        g.size(0, 3, -80, 55)
+        g.size(0, config['integration_time'], -80, 55)
         for i in range(num_v_traces):
             g.addvar('v(0.5)',
                     sec=axon.section_at_f((i+1) * 1.0 / (num_v_traces + 1)))
@@ -357,7 +362,7 @@ def run_single_simulation(config, interactive):
             h.fadvance()
 
     # save the data as a csv
-    with open('demo_traces.csv', 'w') as csv_file:
+    with open(config['csv_filename'], 'w') as csv_file:
         # start with a header of the form "t_ms, V0_mV, V1_mv, V2_mV,..."
         csv_file.write(", ".join(
             ["t_ms"] + ["V{0}_mV".format(i) for i in range(num_v_traces)]
@@ -384,11 +389,11 @@ def has_variable(expr, var):
 
 def run_sweep_simulation(config, interactive):
     axon = Axon(config, delay_config=True)
-    axon.insert_stim()
+    axon.insert_stim(config['stim_position'], config['stim_amplitude'],
+            config['stim_start_time'], config['stim_duration'])
 
     # save the data as a csv
-    csv_filename = "sweep.csv"
-    with open(csv_filename, 'w') as csv_file:
+    with open(config['csv_filename'], 'w') as csv_file:
 
         # Find the variables which change from sweep to sweep
         swept_vars = [key for key,val in config.items() if
@@ -424,7 +429,8 @@ def run_sweep_simulation(config, interactive):
 
             threshold_config = {}
             try:
-                bounds = boolean_bisect(threshold_block_test, 0, 1, 10)
+                bounds = boolean_bisect(threshold_block_test, 0, 1,
+                        config['num_bisections'])
                 threshold = sum(bounds)/2.
 
             except ValueError:
@@ -487,6 +493,11 @@ if __name__ == '__main__':
             # parse it as JSON
             config.update(json.loads(bare_config_text))
     config = simplify_config(config)
+
+    # If the csv filename was not specified, default to the last config
+    # file name.
+    if config['csv_filename'] == '':
+        config['csv_filename'] = configfiles[-1].replace('.yaml', '.csv')
 
     if config['param_sweep_steps'] == 1:
         run_single_simulation(config, interactive)

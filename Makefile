@@ -1,9 +1,11 @@
 OUTPUTS = demo_block.pdf
+CSVFILES = $(OUTPUTS:%.pdf=%.csv)
+.PRECIOUS: $(CSVFILES)
 
 all : $(OUTPUTS)
 
 clean:
-	rm -f $(OUTPUTS) $(OUTPUTS:%.pdf=%.csv)
+	rm -f $(OUTPUTS) $(CSVFILES)
 
 %.csv : %.yaml nrnaxon.py
 	nrniv -python nrnaxon.py $<

@@ -1,9 +1,34 @@
 #!/usr/bin/Rscript
 
+library(yaml)
+
+strip_yaml_extension = function (filename) {
+    return(strsplit(filename, "\\.yaml")[[1]][1]);
+}
+
 # parse the command line arguments
 args = commandArgs(T)
-datafilename = args[1]
-plotfilename = args[2]
+if (length(args) < 1 || length(args) > 3) {
+    print("usage: ", quote=F)
+    print("    plot.R <yaml file> [<data file> [<plot file>]]", quote=F)
+    quit(status=1)
+}
+yamlfilename = args[1]
+
+if (length(args) >= 2) {
+    datafilename = args[2]
+} else {
+    datafilename = paste0(strip_yaml_extension(yamlfilename), ".csv")
+}
+
+if (length(args) >= 3) {
+    plotfilename = args[3]
+} else {
+    plotfilename = paste0(strip_yaml_extension(yamlfilename), ".pdf")
+}
+
+# read in the yaml file
+y = yaml.load_file(yamlfilename)
 
 # read in the csv file
 d = read.csv(datafilename)
@@ -25,7 +50,8 @@ if (length(d[,1]) <= 50) {
 
 # create a new plot
 pdf(plotfilename)
-plot(d[,1], d[,2], xlim=c(xmin,xmax), ylim=c(ymin,ymax), type=plottype)
+plot(d[,1], d[,2], xlim=c(xmin,xmax), ylim=c(ymin,ymax), type=plottype,
+     main=y$plot_title, xlab=y$plot_x_axis_label, ylab=y$plot_y_axis_label)
 
 for (i in 3:(dim(d)[2])) {
     lines(d[,1], d[,i], type=plottype)

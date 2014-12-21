@@ -8,5 +8,5 @@ clean:
 %.csv : %.yaml nrnaxon.py
 	nrniv -python nrnaxon.py $<
 
-%.pdf : %.csv
-	./plot.R $< $@
+%.pdf : %.yaml %.csv
+	./plot.R $^ $@

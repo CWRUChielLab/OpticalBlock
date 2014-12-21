@@ -6,6 +6,11 @@
         "example_inputs" : [ 300, 300.00001, 600,   600.00001 ],
         "example_outputs" : [ 16,  54.8,      54.8,  16       ],
         "new_input" : "x"
-    }
+    },
+
+    # plot settings
+    "plot_title" : "demonstration of a simple thermal block",
+    "plot_x_axis_label" : "time (ms)",
+    "plot_y_axis_label" : "membrane potential (mv)"
 }
 

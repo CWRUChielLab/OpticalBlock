@@ -44,4 +44,12 @@
     # output settings
     "csv_filename" : "" # csv filename (defaults to last config file name)
 
+    # plot settings
+    #
+    # These are not inherited from previous files and must be specified in the
+    # final yaml file.
+    #
+    #"plot_title" : "a title",
+    #"plot_x_axis_label" : "e.g. time (ms)",
+    #"plot_y_axis_label" : "e.g. membrane potential (mv)"
 }

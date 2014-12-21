@@ -1,4 +1,4 @@
-OUTPUTS = demo_block.pdf
+OUTPUTS = demo_block.pdf block_temp_vs_width.pdf
 CSVFILES = $(OUTPUTS:%.pdf=%.csv)
 .PRECIOUS: $(CSVFILES)
 

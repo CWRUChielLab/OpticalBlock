@@ -39,5 +39,12 @@
 
     # simulation settings
     "param_sweep_steps"   : 5,
-    "num_sections"        : 3000
+    "num_sections"        : 3000,
+
+    # plot settings
+    "plot_x_variable" : "block_width",
+    "plot_y_variable" : "block_temp",
+    "plot_title" : "Square block temperature vs block width",
+    "plot_x_axis_label" : "block width (micrometers)",
+    "plot_y_axis_label" : "block temperature (degrees Celsius)"
 }

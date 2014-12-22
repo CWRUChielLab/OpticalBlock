@@ -15,9 +15,27 @@ To run the simulation, first open a shell window and compile the conductances
     cd OpticalBlock
     nrnivmodl
 
-You can then run the code using NEURON:
+You can then run the code using NEURON, specifying which configuration file
+to use, e.g.:
 
-    nrngui nrnaxon.py
+    nrngui nrnaxon.py demo_block.yaml
+
+The above example will produce the file "demo_block.csv".
+
+## Advanced usage
+
+If you have R installed, Rscript on your path, and R yaml installed, you can
+build all of the figures by running
+
+    make
+
+or individual results using make, e.g.
+
+    make demo_block.pdf
+
+or
+
+    make demo_block.csv
 
 # License
 

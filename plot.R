@@ -45,12 +45,12 @@ if (is.null(y_cols)) {
 }
 
 # use the smallest and largest values in the first column as the x-range
-xmin = min(d[,x_cols])
-xmax = max(d[,x_cols])
+xmin = min(d[,x_cols], na.rm=T)
+xmax = max(d[,x_cols], na.rm=T)
 
 # use the remaining columns for the y-rang
-ymin = min(d[,y_cols])
-ymax = max(d[,y_cols])
+ymin = min(d[,y_cols], na.rm=T)
+ymax = max(d[,y_cols], na.rm=T)
 
 # use points iff there are 50 or fewer values, otherwise use lines
 print(" one")

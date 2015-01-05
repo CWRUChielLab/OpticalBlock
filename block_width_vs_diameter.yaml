@@ -1,12 +1,7 @@
 # Finds the minimum blocking temperature over a range of square block widths
 {
     # axon geometry
-    "axon_length"   : {
-        "action" : "interpolate",
-        "example_inputs" : [ 0, 10000 ],
-        "example_outputs" : [ 0, 30000 ],  # µm
-        "new_input" : "block_width"
-    },
+    "axon_length"   : 700,  # µm
     "axon_diameter" : {
         "action" : "interpolate",
         "example_inputs" : [ 0, 1 ],
@@ -27,34 +22,22 @@
         "example_outputs" : [ 2, 514 ],
         "new_input" : "threshold_param"
     },
-    "before_left_edge_of_block" : {
-        "action" : "interpolate",
-        "example_inputs" : [ 0, 30000 ],
-        "example_outputs" : [ 0, 9999.99 ],
-        "new_input" : "axon_length"
-    },
-    "left_edge_of_block" : {
-        "action" : "interpolate",
-        "example_inputs" : [ 0, 30000 ],
-        "example_outputs" : [ 0, 10000 ],
-        "new_input" : "axon_length"
-    },
     "right_edge_of_block" : {
         "action" : "interpolate",
-        "example_inputs" : [ 0, 30000 ],
-        "example_outputs" : [ 0, 20000 ],
-        "new_input" : "axon_length"
+        "example_inputs" : [ 0, 1000 ],
+        "example_outputs" : [ 100, 1100 ],
+        "new_input" : "block_width"
     },
     "past_right_edge_of_block" : {
         "action" : "interpolate",
-        "example_inputs" : [ 0, 30000 ],
-        "example_outputs" : [ 0, 20000.01 ],
-        "new_input" : "axon_length"
+        "example_inputs" : [ 0, 1000 ],
+        "example_outputs" : [ 100.001, 1100.001 ],
+        "new_input" : "block_width"
     },
     "axon_temperature" : { # °C
         "action" : "interpolate",
-        "example_inputs" : [ "before_left_edge_of_block", "left_edge_of_block",
-            "right_edge_of_block", "past_right_edge_of_block" ],
+        "example_inputs" : [ 100, 100.00001, "right_edge_of_block",
+            "past_right_edge_of_block" ],
         "example_outputs" : [ "base_temp", "block_temp", "block_temp", "base_temp" ],
         "new_input" : "x"
     },
@@ -62,7 +45,7 @@
     # simulation settings
     "num_bisections"       : 11,
     "param_sweep_steps"    : 10,
-    "num_sections"         : 300,
+    "num_sections"         : 3200,
     "block_test_threshold" : 0,           # mV
 
     # plot settings

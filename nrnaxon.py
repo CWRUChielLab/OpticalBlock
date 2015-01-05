@@ -421,7 +421,6 @@ def run_sweep_simulation(config, interactive):
                 axon.config = sweepconfig.copy()
                 axon.config[u"threshold_param"] = threshold_param
                 axon.config = simplify_config(axon.config)
-                print(axon.config['axon_length'])
                 axon.update_sections()
                 print("  Testing " + ", ".join(
                     ["{0}:{1}".format(s,axon.config[s])

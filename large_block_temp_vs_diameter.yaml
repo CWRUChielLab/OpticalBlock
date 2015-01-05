@@ -1,0 +1,41 @@
+# Finds the minimum blocking temperature over a range of square block widths
+{
+    # axon geometry
+    "axon_length"   : 1000,  # µm
+    "axon_diameter" : {
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1 ],
+        "example_outputs" : [ 1, 10 ], # µm
+        "new_input" : "sweep_param"
+    },
+
+    # stimulation settings
+    "stim_amplitude"  : 100,   # nA
+    "stim_duration"   : 0.1,   # ms
+
+    # temperature
+    "base_temp" : 16,
+    "block_temp" : {
+        "action" : "interpolate",
+        "example_inputs" : [ 0, 1 ],
+        "example_outputs" : [ "base_temp", 200 ],
+        "new_input" : "threshold_param"
+    },
+    "axon_temperature" : { # °C
+        "action" : "interpolate",
+        "example_inputs" : [ 200, 200.00001, 800, 800.0001 ],
+        "example_outputs" : [ "base_temp", "block_temp", "block_temp", "base_temp" ],
+        "new_input" : "x"
+    },
+
+    # simulation settings
+    "param_sweep_steps"   : 5,
+    "num_sections"        : 3000,
+
+    # plot settings
+    "plot_x_variable" : "axon_diameter",
+    "plot_y_variable" : "block_temp",
+    "plot_title" : "Six hundred micron square block temperature vs axon diameter",
+    "plot_x_axis_label" : "axon diameter (micrometers)",
+    "plot_y_axis_label" : "block temperature (degrees Celsius)"
+}

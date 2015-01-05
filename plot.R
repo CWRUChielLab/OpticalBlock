@@ -66,8 +66,9 @@ plot(d[,x_cols], d[y_cols][,1], xlim=c(xmin,xmax), ylim=c(ymin,ymax), type=plott
      main=y$plot_title, xlab=y$plot_x_axis_label, ylab=y$plot_y_axis_label)
 
 if (length(y_cols) > 1) {
+    colors = rainbow(floor(length(y_cols) * 1.5))
     for (i in 2:length(y_cols)) {
-        lines(d[,x_cols], d[y_cols][,i], type=plottype)
+        lines(d[,x_cols], d[y_cols][,i], type=plottype, col=colors[i-1])
     }
 }
 

@@ -1,11 +1,14 @@
 # Finds the minimum blocking temperature over a range of square block widths
 {
+    # axon geometry
+    "axon_length"   : 1000,  # µm
+
     # temperature
     "base_temp" : 16, # µm
     "block_width" : { # µm
         "action" : "interpolate",
         "example_inputs" : [ 0, 1 ],
-        "example_outputs" : [ 2, 82 ],
+        "example_outputs" : [ 2, 150 ],
         "new_input" : "sweep_param"
     },
     "block_delta_temp" : { # °C
@@ -29,5 +32,7 @@
     },
 
     # simulation settings
-    "param_sweep_steps"   : 5
+    "num_sections"        : 3000,
+    "num_bisections"      : 4,
+    "param_sweep_steps"   : 3
 }

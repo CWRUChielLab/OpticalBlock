@@ -5,12 +5,12 @@
     "axon_diameter" : {
         "action" : "interpolate",
         "example_inputs" : [ 0, 1 ],
-        "example_outputs" : [ 1, 10 ], # µm
+        "example_outputs" : [ 0.1, 50 ], # µm
         "new_input" : "sweep_param"
     },
 
     # stimulation settings
-    "stim_amplitude"  : 100,   # nA
+    "stim_amplitude"  : 1000,   # nA
     "stim_duration"   : 0.1,   # ms
 
     # temperature
@@ -29,7 +29,8 @@
     },
 
     # simulation settings
-    "param_sweep_steps"   : 5,
+    "num_bisections"      : 20,
+    "param_sweep_steps"   : 40,
     "num_sections"        : 3000,
 
     # plot settings

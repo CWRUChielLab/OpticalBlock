@@ -19,6 +19,8 @@
     "g_K_bar"                    : 1.2e-3,  # S/cm²
 
     # stimulus settings
+    # Note: stim position must be 0 µm if the axonal length changes with
+    # sweep_param or threshold_param
     "stim_position"   : 0,   # µm
     "stim_amplitude"  : 1,   # nA
     "stim_start_time" : 0.1, # ms

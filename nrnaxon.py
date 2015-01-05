@@ -25,7 +25,7 @@ class Axon:
         self.stimuli = []
 
         # create the sections
-        self.sections = [h.Section() for i in range(config['num_sections'])]
+        self.sections = [h.Section() for i in range(self.config['num_sections'])]
 
         # connect the sections end to end into a chain, connecting the right
         # side of each segment to the left side of the next
@@ -68,7 +68,7 @@ class Axon:
 
     # Get the section containing the given position along the axon
     def section_at_x(self, x):
-        return self.section_at_f(x / float(config['axon_length']))
+        return self.section_at_f(x / float(self.config['axon_length']))
 
 
     # Apply a function to all the sections that are part of a given range
@@ -82,14 +82,14 @@ class Axon:
             ):
         # parameter checking and cleanup
         if x_end == None:
-            x_end = float(config['axon_length'])
+            x_end = float(self.config['axon_length'])
         if x_end < x_start:
             raise ValueError("x_end must be to the right of x_start")
 
-        for i in range(self.section_id_at_f(x_start / float(config['axon_length'])),
-                self.section_id_at_f(x_end / float(config['axon_length'])) + 1):
+        for i in range(self.section_id_at_f(x_start / float(self.config['axon_length'])),
+                self.section_id_at_f(x_end / float(self.config['axon_length'])) + 1):
             func(self.sections[i],
-                    (i + Axon.middle) * float(config['axon_length']) / len(self.sections))
+                    (i + Axon.middle) * float(self.config['axon_length']) / len(self.sections))
 
 
     # Insert a simple current at the given position
@@ -99,7 +99,12 @@ class Axon:
             delay, # time at which the stimulus starts (ms)
             dur    # duration of the stimulus (ms)
             ):
-        stim = h.IClamp(Axon.middle, self.section_at_x(x))
+        # special case: if the position is 0 um, we know which section to
+        # insert the stimulus even if we can't yet calculate the axon length
+        if x == 0:
+            stim = h.IClamp(Axon.left_side, self.section_at_f(0))
+        else:
+            stim = h.IClamp(Axon.middle, self.section_at_x(x))
         stim.amp = amp
         stim.delay = delay
         stim.dur = dur
@@ -294,13 +299,13 @@ def simplify_config(config):
 # (last 1%) of the axon
 def is_blocked(axon):
     v = h.Vector()
-    v.record(axon.section_at_x(config['block_test_position'])
+    v.record(axon.section_at_x(axon.config['block_test_position'])
         (Axon.middle)._ref_v)
 
     # initialize the simulation
-    h.dt = config['max_time_step']
-    tstop = config['integration_time']
-    v_init = config['initial_membrane_potential']
+    h.dt = axon.config['max_time_step']
+    tstop = axon.config['integration_time']
+    v_init = axon.config['initial_membrane_potential']
     h.finitialize(v_init)
     h.fcurrent()
 
@@ -308,7 +313,7 @@ def is_blocked(axon):
     while h.t < tstop:
         h.fadvance()
 
-    if max(v) >= config['block_test_threshold']:
+    if max(v) >= axon.config['block_test_threshold']:
         return False
     else:
         return True
@@ -399,7 +404,8 @@ def run_sweep_simulation(config, interactive):
         swept_vars = [key for key,val in config.items() if
                 (has_variable(val, "sweep_param") or
                 has_variable(val, "threshold_param")) and
-                not has_variable(val, "x")]
+                not has_variable(val, "x") and
+                not key.startswith("plot_")]
 
         # write out the headers
         csv_file.write(", ".join(swept_vars) + "\n")
@@ -415,6 +421,7 @@ def run_sweep_simulation(config, interactive):
                 axon.config = sweepconfig.copy()
                 axon.config[u"threshold_param"] = threshold_param
                 axon.config = simplify_config(axon.config)
+                print(axon.config['axon_length'])
                 axon.update_sections()
                 print("  Testing " + ", ".join(
                     ["{0}:{1}".format(s,axon.config[s])
@@ -455,8 +462,7 @@ def run_sweep_simulation(config, interactive):
 
 # if we're running this code directly (vs. importing it as a library),
 # run a simple simulation and generate a demo plot
-if __name__ == '__main__':
-
+def main():
     # We need to to some hacking to support command line parameters.  NEURON
     # tries to run all of the arguments on the command line, but we want to
     # use these extra parameters for config files.  This is not a disaster
@@ -508,3 +514,8 @@ if __name__ == '__main__':
     # (see command line options above)
     if not interactive:
         h.quit();
+
+if __name__ == '__main__':
+    main()
+
+

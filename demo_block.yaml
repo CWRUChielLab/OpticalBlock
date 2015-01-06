@@ -1,12 +1,19 @@
 # Demonstrates a simple thermal block by uniformly heating 300 um of axon
 {
+    # axon geometry
+    "axon_length"         : 10000,  # µm
+
     # temperature
     "axon_temperature" : { # °C
         "action" : "interpolate",
-        "example_inputs" : [ 300, 300.00001, 600,   600.00001 ],
-        "example_outputs" : [ 16,  54.8,      54.8,  16       ],
+        "example_inputs" : [ 1000, 1000.00001, 9000,   9000.00001 ],
+        "example_outputs" : [ 16,  195,         195,   16       ],
         "new_input" : "x"
     },
+
+    # simulation settings
+    "num_sections"        : 10000,
+    "integration_time"    : 10,     # ms
 
     # plot settings
     "plot_title" : "demonstration of a simple thermal block",

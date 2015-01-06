@@ -36,7 +36,7 @@ class Axon:
         # insert the active channels
         for sec in self.sections:
             #sec.insert('hh')
-            sec.insert('fhm1')
+            sec.insert('hhT')
 
         if not delay_config:
             # set the various section parameters
@@ -115,7 +115,7 @@ class Axon:
 
 
     def set_section_temp(self, sec, temp):
-        sec.localtemp_fhm1 = temp
+        sec.localtemp_hhT = temp
         sec.Ra = (self.config['axial_resistance'] *
                 self.config['axial_resistance_Q10']**(
                 (temp - self.config['axial_resistance_T'])/10.))
@@ -137,13 +137,19 @@ class Axon:
             # set the passive properties
             sec.cm = config['membrane_capacitance']
 
-            # set the active properties
-            sec.pnabar_fhm1 = config['g_Na_bar']
-            sec.ppbar_fhm1 = config['g_Na_persistent_bar']
-            sec.pkbar_fhm1 = config['g_K_bar']
+            # set the electrical properties
+            sec.gnabar_hhT = config['g_Na_bar']
+            sec.gkbar_hhT = config['g_K_bar']
+            sec.gl_hhT = config['g_l']
+            sec.el_hhT = config['e_l']
+            sec.m_alpha_q10_hhT = config['m_alpha_Q10']
+            sec.m_beta_q10_hhT = config['m_beta_Q10']
+            sec.n_alpha_q10_hhT = config['n_alpha_Q10']
+            sec.n_beta_q10_hhT = config['n_beta_Q10']
+            sec.h_alpha_q10_hhT = config['h_alpha_Q10']
+            sec.h_beta_q10_hhT = config['h_beta_Q10']
 
             # set the temperature
-            #print x, config['axon_temperature']
             self.set_section_temp(sec, config['axon_temperature'])
 
         self.apply_to_sections(set_section_params);

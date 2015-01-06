@@ -1,4 +1,4 @@
-TITLE hh.mod   squid sodium, potassium, and leak channels
+TITLE hhT.mod   squid sodium, potassium, and leak channels
 
 COMMENT
  This is the original Hodgkin-Huxley treatment for the set of sodium,
@@ -21,20 +21,28 @@ UNITS {
 
 ? interface
 NEURON {
-        SUFFIX hh
+        SUFFIX hhT
         USEION na READ ena WRITE ina
         USEION k READ ek WRITE ik
         NONSPECIFIC_CURRENT il
-        RANGE gnabar, gkbar, gl, el, gna, gk
+        RANGE gnabar, gkbar, gl, el, gna, gk, m_alpha_q10, m_beta_q10
+        RANGE n_alpha_q10, n_beta_q10, h_alpha_q10, h_beta_q10, localtemp
         GLOBAL minf, hinf, ninf, mtau, htau, ntau
         THREADSAFE : assigned GLOBALs will be per thread
 }
 
 PARAMETER {
+        localtemp = 20 (degC)
         gnabar = .12 (S/cm2)        <0,1e9>
         gkbar = .036 (S/cm2)        <0,1e9>
-        gl = .0003 (S/cm2)        <0,1e9>
+        gl = .0003 (S/cm2)          <0,1e9>
         el = -54.3 (mV)
+        m_alpha_q10 = 1.8
+        m_beta_q10 = 1.8
+        n_alpha_q10 = 3
+        n_beta_q10 = 3
+        h_alpha_q10 = 3
+        h_beta_q10 = 3
 }
 
 STATE {
@@ -82,35 +90,40 @@ DERIVATIVE states {
         n' = (ninf-n)/ntau
 }
 
-:LOCAL q10
-
 
 ? rates
 PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
-        LOCAL  alpha, beta, sum, q10
-        TABLE minf, mtau, hinf, htau, ninf, ntau DEPEND celsius FROM -100 TO 100 WITH 200
+        LOCAL  m_alpha, m_beta, m_sum, m_alpha_q10_term, m_beta_q10_term, h_alpha, h_beta, h_sum, h_alpha_q10_term, h_beta_q10_term, n_alpha, n_beta, n_sum, n_alpha_q10_term, n_beta_q10_term
+        TABLE minf, mtau, hinf, htau, ninf, ntau DEPEND localtemp FROM -100 TO 600 WITH 700
 
 UNITSOFF
-        q10 = 3^((celsius - 6.3)/10)
+        : The magic numbers are experimental values from Hodgekin and Huxley 1952d;
+        : these will all need to be updated for difference reference values.
                 :"m" sodium activation system
-        alpha = .1 * vtrap(-(v+40),10)
-        beta =  4 * exp(-(v+65)/18)
-        sum = alpha + beta
-        mtau = 1/(q10*sum)
-        minf = alpha/sum
+        m_alpha_q10_term = m_alpha_q10^((localtemp - 6.3)/10)
+        m_beta_q10_term = m_beta_q10^((localtemp - 6.3)/10)
+        m_alpha = m_alpha_q10_term * .1 * vtrap(-(v+40),10)
+        m_beta =  m_beta_q10_term * 4 * exp(-(v+65)/18)
+        m_sum = m_alpha + m_beta
+        mtau = 1/m_sum
+        minf = m_alpha/m_sum
                 :"h" sodium inactivation system
-        alpha = .07 * exp(-(v+65)/20)
-        beta = 1 / (exp(-(v+35)/10) + 1)
-        sum = alpha + beta
-        htau = 1/(q10*sum)
-        hinf = alpha/sum
+        h_alpha_q10_term = h_alpha_q10^((localtemp - 6.3)/10)
+        h_beta_q10_term = h_beta_q10^((localtemp - 6.3)/10)
+        h_alpha = h_alpha_q10_term * .07 * exp(-(v+65)/20)
+        h_beta =  h_beta_q10_term * 1 / (exp(-(v+35)/10) + 1)
+        h_sum = h_alpha + h_beta
+        htau = 1/h_sum
+        hinf = h_alpha/h_sum
                 :"n" potassium activation system
-        alpha = .01*vtrap(-(v+55),10)
-        beta = .125*exp(-(v+65)/80)
-        sum = alpha + beta
-        ntau = 1/(q10*sum)
-        ninf = alpha/sum
+        n_alpha_q10_term = n_alpha_q10^((localtemp - 6.3)/10)
+        n_beta_q10_term = n_beta_q10^((localtemp - 6.3)/10)
+        n_alpha = n_alpha_q10_term * .01*vtrap(-(v+55),10)
+        n_beta =  n_beta_q10_term * .125*exp(-(v+65)/80)
+        n_sum = n_alpha + n_beta
+        ntau = 1/n_sum
+        ninf = n_alpha/n_sum
 }
 
 FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.

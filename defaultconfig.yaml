@@ -11,12 +11,19 @@
     # axon electrical properties
     "initial_membrane_potential" : -65,     # mV
     "axial_resistance"           : 100,     # Ohm·cm² at 20°C
-    "axial_resistance_T"         : 18.5,    # °C
+    "axial_resistance_T"         : 6.3,     # °C
     "axial_resistance_Q10"       : 0.76923, # Ohm·cm²
     "membrane_capacitance"       : 1,       # µF/cm²
-    "g_Na_bar"                   : 8.0e-3,  # S/cm²
-    "g_Na_persistent_bar"        : 0.54e-3, # S/cm²
-    "g_K_bar"                    : 1.2e-3,  # S/cm²
+    "g_Na_bar"                   : 120e-3,  # S/cm²
+    "g_K_bar"                    : 36e-3,   # S/cm²
+    "g_l"                        : 0.3e-3,  # S/cm²
+    "e_l"                        : -54.3,   # mV
+    "m_alpha_Q10"                : 1.8,
+    "m_beta_Q10"                 : 1.8,
+    "n_alpha_Q10"                : 3,
+    "n_beta_Q10"                 : 3,
+    "h_alpha_Q10"                : 3,
+    "h_beta_Q10"                 : 3,
 
     # stimulus settings
     # Note: stim position must be 0 µm if the axonal length changes with

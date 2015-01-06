@@ -53,7 +53,6 @@ ymin = min(d[,y_cols], na.rm=T)
 ymax = max(d[,y_cols], na.rm=T)
 
 # use points iff there are 50 or fewer values, otherwise use lines
-print(" one")
 if (length(d[,x_cols]) <= 50) {
     plottype = "p"
 } else {

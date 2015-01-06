@@ -37,7 +37,7 @@
     # dependent and independent variables respectively (see example).
     "param_sweep_steps"    : 1,             # independent var values to test
     "num_bisections"       : 20,            # dependent var bisections to try
-    "block_test_position"  : "axon_length", # µm
+    "block_test_position"  : "axon_length", # µm (defined above)
     "block_test_threshold" : -40,           # mV
 
     # single integration (non-sweep) settings
